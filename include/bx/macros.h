@@ -7,7 +7,9 @@
 #define BX_MACROS_H_HEADER_GUARD
 
 #include "bx.h"
-#include <type_traits>
+#if !BX_COMPILER_S3E
+#   include <type_traits>
+#endif
 
 ///
 #if BX_COMPILER_MSVC
@@ -97,6 +99,44 @@
 #	define BX_PRINTF_ARGS(_format, _args)
 #	define BX_THREAD_LOCAL __declspec(thread)
 #	define BX_ATTRIBUTE(_x)
+#elif BX_COMPILER_S3E
+#   ifdef _MSC_VER
+#	    define BX_ALIGN_DECL(_align, _decl) __declspec(align(_align) ) _decl
+#	    define BX_ALLOW_UNUSED
+#	    define BX_FORCE_INLINE __forceinline
+#   	define BX_FUNCTION __FUNCTION__
+#   	define BX_LIKELY(_x)   (_x)
+#	    define BX_UNLIKELY(_x) (_x)
+#	    define BX_NO_INLINE __declspec(noinline)
+#	    define BX_NO_RETURN
+#	    define BX_NO_VTABLE __declspec(novtable)
+#	    define BX_OVERRIDE override
+#	    define BX_PRINTF_ARGS(_format, _args)
+#   	define BX_THREAD_LOCAL __declspec(thread)
+#   	define BX_ATTRIBUTE(_x)
+#   else
+#	    define BX_ALIGN_DECL(_align, _decl) _decl __attribute__( (aligned(_align) ) )
+#	    define BX_ALLOW_UNUSED __attribute__( (unused) )
+#	    define BX_FORCE_INLINE inline __attribute__( (__always_inline__) )
+#	    define BX_FUNCTION __PRETTY_FUNCTION__
+#	    define BX_LIKELY(_x)   __builtin_expect(!!(_x), 1)
+#	    define BX_UNLIKELY(_x) __builtin_expect(!!(_x), 0)
+#	    define BX_NO_INLINE __attribute__( (noinline) )
+#   	define BX_NO_RETURN __attribute__( (noreturn) )
+#	    define BX_NO_VTABLE
+#   	define BX_OVERRIDE
+#   	define BX_PRINTF_ARGS(_format, _args) __attribute__( (format(__printf__, _format, _args) ) )
+#   	if BX_CLANG_HAS_FEATURE(cxx_thread_local)
+#   		define BX_THREAD_LOCAL __thread
+#   	endif // BX_COMPILER_CLANG
+#   	if (!BX_PLATFORM_OSX && (BX_COMPILER_GCC >= 40200)) || (BX_COMPILER_GCC >= 40500)
+#   		define BX_THREAD_LOCAL __thread
+#   	endif // BX_COMPILER_GCC
+#   	define BX_ATTRIBUTE(_x) __attribute__( (_x) )
+#   	if BX_CRT_MSVC
+#   		define __stdcall
+#   	endif // BX_CRT_MSVC
+#   endif
 #else
 #	error "Unknown BX_COMPILER_?"
 #endif
@@ -127,7 +167,14 @@
 #define BX_UNUSED_11(_a1, _a2, _a3, _a4, _a5, _a6, _a7, _a8, _a9, _a10, _a11) BX_UNUSED_10(_a1, _a2, _a3, _a4, _a5, _a6, _a7, _a8, _a9, _a10); BX_UNUSED_1(_a11)
 #define BX_UNUSED_12(_a1, _a2, _a3, _a4, _a5, _a6, _a7, _a8, _a9, _a10, _a11, _a12) BX_UNUSED_11(_a1, _a2, _a3, _a4, _a5, _a6, _a7, _a8, _a9, _a10, _a11); BX_UNUSED_1(_a12)
 
-#if BX_COMPILER_MSVC
+#if BX_COMPILER_S3E
+#   ifdef _MSC_VER
+// Workaround MSVS bug...
+#	    define BX_UNUSED(...) BX_MACRO_DISPATCHER(BX_UNUSED_, __VA_ARGS__) BX_VA_ARGS_PASS(__VA_ARGS__)
+#   else
+#	    define BX_UNUSED(...) BX_MACRO_DISPATCHER(BX_UNUSED_, __VA_ARGS__)(__VA_ARGS__)
+#   endif // BX_COMPILER_MSVC
+#elif BX_COMPILER_MSVC
 // Workaround MSVS bug...
 #	define BX_UNUSED(...) BX_MACRO_DISPATCHER(BX_UNUSED_, __VA_ARGS__) BX_VA_ARGS_PASS(__VA_ARGS__)
 #else
@@ -165,6 +212,22 @@
 #	define BX_PRAGMA_DIAGNOSTIC_IGNORED_MSVC(_x)
 #endif // BX_COMPILER_CLANG
 
+#if BX_COMPILER_S3E
+#   ifdef _MSC_VER
+#	    define BX_PRAGMA_DIAGNOSTIC_PUSH_S3E_()     __pragma(warning(push) )
+#	    define BX_PRAGMA_DIAGNOSTIC_POP_S3E_()      __pragma(warning(pop) )
+#	    define BX_PRAGMA_DIAGNOSTIC_IGNORED_S3E(_x) __pragma(warning(disable:_x) )
+#   else
+#	    define BX_PRAGMA_DIAGNOSTIC_PUSH_S3E_()       _Pragma("GCC diagnostic push")
+#	    define BX_PRAGMA_DIAGNOSTIC_POP_S3E_()        _Pragma("GCC diagnostic pop")
+#	    define BX_PRAGMA_DIAGNOSTIC_IGNORED_S3E(_x)   _Pragma(BX_STRINGIZE(GCC diagnostic ignored _x) )
+#   endif
+#else
+#	define BX_PRAGMA_DIAGNOSTIC_PUSH_S3E_()
+#	define BX_PRAGMA_DIAGNOSTIC_POP_S3E_()
+#	define BX_PRAGMA_DIAGNOSTIC_IGNORED_S3E(_x)
+#endif // BX_COMPILER_CLANG
+
 #if BX_COMPILER_CLANG
 #	define BX_PRAGMA_DIAGNOSTIC_PUSH              BX_PRAGMA_DIAGNOSTIC_PUSH_CLANG_
 #	define BX_PRAGMA_DIAGNOSTIC_POP               BX_PRAGMA_DIAGNOSTIC_POP_CLANG_
@@ -177,10 +240,14 @@
 #	define BX_PRAGMA_DIAGNOSTIC_PUSH              BX_PRAGMA_DIAGNOSTIC_PUSH_MSVC_
 #	define BX_PRAGMA_DIAGNOSTIC_POP               BX_PRAGMA_DIAGNOSTIC_POP_MSVC_
 #	define BX_PRAGMA_DIAGNOSTIC_IGNORED_CLANG_GCC(_x)
+#elif BX_COMPILER_S3E
+#	define BX_PRAGMA_DIAGNOSTIC_PUSH              BX_PRAGMA_DIAGNOSTIC_PUSH_S3E_
+#	define BX_PRAGMA_DIAGNOSTIC_POP               BX_PRAGMA_DIAGNOSTIC_POP_S3E_
+#	define BX_PRAGMA_DIAGNOSTIC_IGNORED_CLANG_GCC(_x)
 #endif // BX_COMPILER_
 
 ///
-#if BX_COMPILER_MSVC
+#if BX_COMPILER_MSVC || BX_COMPILER_S3E
 #	define BX_TYPE_IS_POD(t) (!__is_class(t) || __is_pod(t))
 #else
 #	define BX_TYPE_IS_POD(t) std::is_pod<t>::value
@@ -206,7 +273,13 @@
 #define BX_CLASS_3(_class, _a1, _a2, _a3) BX_CLASS_2(_class, _a1, _a2); BX_CLASS_1(_class, _a3)
 #define BX_CLASS_4(_class, _a1, _a2, _a3, _a4) BX_CLASS_3(_class, _a1, _a2, _a3); BX_CLASS_1(_class, _a4)
 
-#if BX_COMPILER_MSVC
+#if BX_COMPILER_S3E
+#   ifdef _MSC_VER
+#	    define BX_CLASS(_class, ...) BX_MACRO_DISPATCHER(BX_CLASS_, __VA_ARGS__) BX_VA_ARGS_PASS(_class, __VA_ARGS__)
+#   else
+#	    define BX_CLASS(_class, ...) BX_MACRO_DISPATCHER(BX_CLASS_, __VA_ARGS__)(_class, __VA_ARGS__)
+#   endif
+#elif BX_COMPILER_MSVC
 #	define BX_CLASS(_class, ...) BX_MACRO_DISPATCHER(BX_CLASS_, __VA_ARGS__) BX_VA_ARGS_PASS(_class, __VA_ARGS__)
 #else
 #	define BX_CLASS(_class, ...) BX_MACRO_DISPATCHER(BX_CLASS_, __VA_ARGS__)(_class, __VA_ARGS__)

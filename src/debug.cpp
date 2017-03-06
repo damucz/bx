@@ -20,6 +20,8 @@ extern "C" void NSLog(CFStringRef _format, ...);
 #	endif // defined(__OBJC__)
 #elif 0 // BX_PLATFORM_EMSCRIPTEN
 #	include <emscripten.h>
+#elif BX_PLATFORM_S3E
+#   include<IwDebug.h>
 #else
 #	include <stdio.h> // fputs, fflush
 #endif // BX_PLATFORM_WINDOWS
@@ -60,6 +62,8 @@ namespace bx
 #	endif // defined(__OBJC__)
 #elif 0 // BX_PLATFORM_EMSCRIPTEN
 		emscripten_log(EM_LOG_CONSOLE, "%s", _out);
+#elif BX_PLATFORM_S3E
+        IwTrace(BX, ("%s", _out));
 #elif !BX_CRT_NONE
 		fputs(_out, stdout);
 		fflush(stdout);
@@ -90,7 +94,11 @@ namespace bx
 		va_end(argList);
 	}
 
-#define DBG_ADDRESS "%" PRIxPTR
+#if BX_COMPILER_S3E
+#   define DBG_ADDRESS "%p"
+#else
+#   define DBG_ADDRESS "%" PRIxPTR
+#endif
 
 	void debugPrintfData(const void* _data, uint32_t _size, const char* _format, ...)
 	{

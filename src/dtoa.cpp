@@ -8,7 +8,9 @@
 #include <bx/string.h>
 #include <bx/uint32_t.h>
 
-#include <type_traits>
+#if !BX_COMPILER_S3E
+#   include <type_traits>
+#endif
 
 namespace bx
 {
@@ -479,7 +481,11 @@ namespace bx
 
 			_max = toString(_dst + 1
 					, _max - 1
+#if BX_COMPILER_S3E
+                    , -_value
+#else
 					, typename std::make_unsigned<Ty>::type(-_value)
+#endif
 					, _base
 					);
 			if (_max == 0)
@@ -493,7 +499,11 @@ namespace bx
 
 		return toString(_dst
 					, _max
-					, typename std::make_unsigned<Ty>::type(_value)
+#if BX_COMPILER_S3E
+                    , -_value
+#else
+                    , typename std::make_unsigned<Ty>::type(-_value)
+#endif
 					, _base
 					);
 	}

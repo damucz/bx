@@ -39,6 +39,8 @@ namespace bx
 	{
 #if BX_COMPILER_MSVC
 		_ReadBarrier();
+#elif BX_COMPILER_S3E
+
 #else
 		asm volatile("":::"memory");
 #endif // BX_COMPILER
@@ -49,6 +51,8 @@ namespace bx
 	{
 #if BX_COMPILER_MSVC
 		_WriteBarrier();
+#elif BX_COMPILER_S3E
+
 #else
 		asm volatile("":::"memory");
 #endif // BX_COMPILER
@@ -59,6 +63,8 @@ namespace bx
 	{
 #if BX_COMPILER_MSVC
 		_ReadWriteBarrier();
+#elif BX_COMPILER_S3E
+
 #else
 		asm volatile("":::"memory");
 #endif // BX_COMPILER
@@ -73,6 +79,8 @@ namespace bx
 		MemoryBarrier();
 #elif BX_COMPILER_MSVC
 		_mm_mfence();
+#elif BX_COMPILER_S3E
+
 #else
 		__sync_synchronize();
 //		asm volatile("mfence":::"memory");
@@ -105,6 +113,8 @@ namespace bx
 	{
 #if BX_COMPILER_MSVC
 		return _InterlockedExchangeAdd( (volatile long*)_ptr, _add);
+#elif BX_COMPILER_S3E
+        auto tmp = *_ptr; *_ptr = *_ptr + _add; return tmp;
 #else
 		return __sync_fetch_and_add(_ptr, _add);
 #endif // BX_COMPILER_
@@ -128,6 +138,8 @@ namespace bx
 
 		return oldVal;
 #	endif
+#elif BX_COMPILER_S3E
+        auto tmp = *_ptr; *_ptr = *_ptr + _add; return tmp;
 #else
 		return __sync_fetch_and_add(_ptr, _add);
 #endif // BX_COMPILER_
@@ -150,6 +162,8 @@ namespace bx
 	{
 #if BX_COMPILER_MSVC
 		return atomicFetchAndAdd(_ptr, _add) + _add;
+#elif BX_COMPILER_S3E
+        *_ptr = *_ptr + _add; return *_ptr;
 #else
 		return __sync_add_and_fetch(_ptr, _add);
 #endif // BX_COMPILER_
@@ -160,6 +174,8 @@ namespace bx
 	{
 #if BX_COMPILER_MSVC
 		return atomicFetchAndAdd(_ptr, _add) + _add;
+#elif BX_COMPILER_S3E
+        *_ptr = *_ptr + _add; return *_ptr;
 #else
 		return __sync_add_and_fetch(_ptr, _add);
 #endif // BX_COMPILER_
@@ -182,6 +198,8 @@ namespace bx
 	{
 #if BX_COMPILER_MSVC
 		return atomicFetchAndAdd(_ptr, -_sub);
+#elif BX_COMPILER_S3E
+        auto tmp = *_ptr; *_ptr = *_ptr - _sub; return tmp;
 #else
 		return __sync_fetch_and_sub(_ptr, _sub);
 #endif // BX_COMPILER_
@@ -192,6 +210,8 @@ namespace bx
 	{
 #if BX_COMPILER_MSVC
 		return atomicFetchAndAdd(_ptr, -_sub);
+#elif BX_COMPILER_S3E
+        auto tmp = *_ptr; *_ptr = *_ptr - _sub; return tmp;
 #else
 		return __sync_fetch_and_sub(_ptr, _sub);
 #endif // BX_COMPILER_
@@ -214,6 +234,8 @@ namespace bx
 	{
 #if BX_COMPILER_MSVC
 		return atomicFetchAndAdd(_ptr, -_sub) - _sub;
+#elif BX_COMPILER_S3E
+        *_ptr = *_ptr - _sub; return *_ptr;
 #else
 		return __sync_sub_and_fetch(_ptr, _sub);
 #endif // BX_COMPILER_
@@ -224,6 +246,8 @@ namespace bx
 	{
 #if BX_COMPILER_MSVC
 		return atomicFetchAndAdd(_ptr, -_sub) - _sub;
+#elif BX_COMPILER_S3E
+        *_ptr = *_ptr - _sub; return *_ptr;
 #else
 		return __sync_sub_and_fetch(_ptr, _sub);
 #endif // BX_COMPILER_
@@ -261,6 +285,10 @@ namespace bx
 	{
 #if BX_COMPILER_MSVC
 		return _InterlockedCompareExchange( (volatile LONG*)(_ptr), _new, _old);
+#elif BX_COMPILER_S3E
+        auto tmp = *(volatile int32_t*)_ptr;
+        if (*(volatile int32_t*)_ptr == _old) *(volatile int32_t*)_ptr = _new;
+        return tmp;
 #else
 		return __sync_val_compare_and_swap( (volatile int32_t*)_ptr, _old, _new);
 #endif // BX_COMPILER
@@ -272,6 +300,10 @@ namespace bx
 	{
 #if BX_COMPILER_MSVC
 		return _InterlockedCompareExchange64( (volatile LONG64*)(_ptr), _new, _old);
+#elif BX_COMPILER_S3E
+        auto tmp = *(volatile int64_t*)_ptr;
+        if (*(volatile int64_t*)_ptr == _old) *(volatile int64_t*)_ptr = _new;
+        return tmp;
 #else
 		return __sync_val_compare_and_swap( (volatile int64_t*)_ptr, _old, _new);
 #endif // BX_COMPILER
@@ -282,6 +314,10 @@ namespace bx
 	{
 #if BX_COMPILER_MSVC
 		return InterlockedExchangePointer(_ptr, _new);
+#elif BX_COMPILER_S3E
+        auto tmp = *_ptr;
+        *_ptr = _new;
+        return tmp;
 #else
 		return __sync_lock_test_and_set(_ptr, _new);
 #endif // BX_COMPILER

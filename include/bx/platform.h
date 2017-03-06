@@ -15,6 +15,7 @@
 #define BX_COMPILER_CLANG_ANALYZER  0
 #define BX_COMPILER_GCC             0
 #define BX_COMPILER_MSVC            0
+#define BX_COMPILER_S3E             0
 
 // Endianess
 #define BX_CPU_ENDIAN_BIG    0
@@ -58,9 +59,13 @@
 #define BX_PLATFORM_WINRT      0
 #define BX_PLATFORM_XBOX360    0
 #define BX_PLATFORM_XBOXONE    0
+#define BX_PLATFORM_S3E        0
 
 // http://sourceforge.net/apps/mediawiki/predef/index.php?title=Compilers
-#if defined(__clang__)
+#if defined(__S3E__)
+#   undef  BX_COMPILER_S3E
+#   define BX_COMPILER_S3E __S3E__
+#elif defined(__clang__)
 // clang defines __GNUC__ or _MSC_VER
 #	undef  BX_COMPILER_CLANG
 #	define BX_COMPILER_CLANG (__clang_major__ * 10000 + __clang_minor__ * 100 + __clang_patchlevel__)
@@ -220,6 +225,9 @@
 #elif defined(__GNU__)
 #	undef  BX_PLATFORM_HURD
 #	define BX_PLATFORM_HURD 1
+#elif defined(__S3E__)
+#   undef  BX_PLATFORM_S3E
+#   define BX_PLATFORM_S3E 1
 #endif //
 
 #if !BX_CRT_NONE
@@ -227,7 +235,7 @@
 #	if defined(__BIONIC__)
 #		undef  BX_CRT_BIONIC
 #		define BX_CRT_BIONIC 1
-#	elif defined(_MSC_VER)
+#	elif defined(_MSC_VER) && !defined(BX_PLATFORM_S3E)
 #		undef  BX_CRT_MSVC
 #		define BX_CRT_MSVC 1
 #	elif defined(__GLIBC__)
@@ -239,6 +247,9 @@
 #	elif defined(__apple_build_version__) || defined(__ORBIS__) || defined(__EMSCRIPTEN__)
 #		undef  BX_CRT_LIBCXX
 #		define BX_CRT_LIBCXX 1
+#   elif defined(__S3E__)
+#       undef  BX_CRT_S3E
+#       define BX_CRT_S3E 1
 #	endif //
 
 #	if !BX_CRT_BIONIC \
@@ -247,7 +258,8 @@
 	&& !BX_CRT_MINGW  \
 	&& !BX_CRT_MSVC   \
 	&& !BX_CRT_MUSL   \
-	&& !BX_CRT_NEWLIB
+	&& !BX_CRT_NEWLIB \
+    && !BX_CRT_S3E
 #		undef  BX_CRT_NONE
 #		define BX_CRT_NONE 1
 #	endif // BX_CRT_*
@@ -266,6 +278,7 @@
 		|| BX_PLATFORM_STEAMLINK  \
 		|| BX_PLATFORM_PS4        \
 		|| BX_PLATFORM_RPI        \
+        || BX_PLATFORM_S3E        \
 		)
 
 #define BX_PLATFORM_NONE !(0      \
@@ -285,6 +298,7 @@
 		|| BX_PLATFORM_WINRT      \
 		|| BX_PLATFORM_XBOX360    \
 		|| BX_PLATFORM_XBOXONE    \
+        || BX_PLATFORM_S3E        \
 		)
 
 #if BX_COMPILER_GCC
@@ -313,6 +327,8 @@
 #	else
 #		define BX_COMPILER_NAME "MSVC"
 #	endif //
+#elif BX_COMPILER_S3E
+#   define BX_COMPILER_NAME "S3E"
 #endif // BX_COMPILER_
 
 #if BX_PLATFORM_ANDROID
@@ -352,6 +368,8 @@
 #	define BX_PLATFORM_NAME "Xbox 360"
 #elif BX_PLATFORM_XBOXONE
 #	define BX_PLATFORM_NAME "Xbox One"
+#elif BX_PLATFORM_S3E
+#   define BX_PLATFORM_NAME "S3E"
 #elif BX_PLATFORM_NONE
 #	define BX_PLATFORM_NAME "None"
 #else
@@ -386,6 +404,8 @@
 #	define BX_CRT_NAME "Newlib"
 #elif BX_CRT_MUSL
 #	define BX_CRT_NAME "musl libc"
+#elif BX_CRT_S3E
+#   define BX_CRT_NAME "S3E C library"
 #elif BX_CRT_NONE
 #	define BX_CRT_NAME "None"
 #else

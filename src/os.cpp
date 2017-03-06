@@ -25,7 +25,8 @@
 	|| BX_PLATFORM_OSX \
 	|| BX_PLATFORM_PS4 \
 	|| BX_PLATFORM_RPI \
-	|| BX_PLATFORM_STEAMLINK
+	|| BX_PLATFORM_STEAMLINK \
+    || BX_PLATFORM_S3E
 #	include <sched.h> // sched_yield
 #	if BX_PLATFORM_BSD \
 	|| BX_PLATFORM_IOS \
@@ -54,6 +55,8 @@
 #		include <pthread/pthread.h> // pthread_self
 #	elif BX_PLATFORM_ANDROID
 #		include "debug.h" // getTid is not implemented...
+#   elif BX_PLATFORM_S3E
+#       include <s3eDevice.h>
 #	endif // BX_PLATFORM_ANDROID
 #endif // BX_PLATFORM_
 
@@ -88,6 +91,8 @@ namespace bx
 		::Sleep(0);
 #elif BX_PLATFORM_XBOXONE || BX_PLATFORM_WINRT
 		debugOutput("yield is not implemented"); debugBreak();
+#elif BX_PLATFORM_S3E
+        s3eDeviceYield(0);
 #else
 		::sched_yield();
 #endif // BX_PLATFORM_
@@ -178,7 +183,8 @@ namespace bx
 	|| BX_PLATFORM_NACL \
 	|| BX_PLATFORM_PS4 \
 	|| BX_PLATFORM_XBOXONE \
-	|| BX_PLATFORM_WINRT
+	|| BX_PLATFORM_WINRT \
+    || BX_PLATFORM_S3E
 		BX_UNUSED(_filePath);
 		return NULL;
 #else
@@ -194,7 +200,8 @@ namespace bx
 	|| BX_PLATFORM_NACL \
 	|| BX_PLATFORM_PS4 \
 	|| BX_PLATFORM_XBOXONE \
-	|| BX_PLATFORM_WINRT
+	|| BX_PLATFORM_WINRT \
+    || BX_PLATFORM_S3E
 		BX_UNUSED(_handle);
 #else
 		::dlclose(_handle);
@@ -209,7 +216,8 @@ namespace bx
 	|| BX_PLATFORM_NACL \
 	|| BX_PLATFORM_PS4 \
 	|| BX_PLATFORM_XBOXONE \
-	|| BX_PLATFORM_WINRT
+	|| BX_PLATFORM_WINRT \
+    || BX_PLATFORM_S3E
 		BX_UNUSED(_handle, _symbol);
 		return NULL;
 #else
